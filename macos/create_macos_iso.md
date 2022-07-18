@@ -63,6 +63,14 @@ mv /tmp/Mojave.cdr.dmg ~/Desktop/Mojave.dmg
 
 ---
 
+## create macOS ISO & dmg via script 
+
+# 1. Download the image from [How to get old versions of macOS](https://support.apple.com/en-gb/HT211683)
+# 2. copy this shell file somewhere in your Mac
+# 3. chmod +x create_macos_mojave_10.14_iso_and_dmg.sh
+# 4. $ sudo ./create_macos_mojave_10.14_iso_and_dmg.sh
+# The ISO & dmg file will be located in your Desktop when the script will be complete
+
 ## ref
 
 [How to get old versions of macOS](https://support.apple.com/en-gb/HT211683)
