@@ -72,6 +72,11 @@ mv /tmp/Mojave.cdr.dmg ~/Desktop/Mojave.dmg
 ***
 ###### The ISO & dmg file will be located in your Desktop when the script will be complete
 
+## Enable macOS VNC
+```bash
+  sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes -clientopts -setvncpw -vncpw $vnc_passwd -restart -agent -privs -all
+```bash
+
 ## ref
 
 [How to get old versions of macOS](https://support.apple.com/en-gb/HT211683)
