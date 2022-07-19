@@ -75,7 +75,7 @@ mv /tmp/Mojave.cdr.dmg ~/Desktop/Mojave.dmg
 ## Enable macOS VNC
 ```bash
   sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes -clientopts -setvncpw -vncpw $vnc_passwd -restart -agent -privs -all
-```bash
+```
 
 ## ref
 
