@@ -1,139 +1,113 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-dep-rwo
+  name: nginx-state-rwo
   labels:
-    app: mysql-dep-rwo
+    app: nginx-state-rwo
 spec:
   ports:
-    - port: 3306
+  - port: 80
+    name: web-state-rwo
   selector:
-    app: mysql-dep-rwo
-  clusterIP: None
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-dep-rwo-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 0.5Gi
+    app: nginx-state-rwo
+  type: NodePort
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mysql-dep-rwo
-  labels:
-    app: mysql-dep-rwo
+  name: web-state-rwo
 spec:
   selector:
     matchLabels:
-      app: mysql-dep-rwo # has to match .spec.template.metadata.labels
-  strategy:
-    type: Recreate
+      app: nginx-state-rwo # has to match .spec.template.metadata.labels
+  serviceName: "nginx-state-rwo"
+  replicas: 1 # by default is 1
   template:
     metadata:
       labels:
-        app: mysql-dep-rwo
+        app: nginx-state-rwo # has to match .spec.selector.matchLabels
     spec:
       restartPolicy: Always
+      terminationGracePeriodSeconds: 10
       containers:
-      - image: mysql:5.6
-        name: mysql-dep-rwo
+      - name: nginx-state-rwo
+        image: k8s.gcr.io/nginx-slim:0.8
         livenessProbe:
           exec:
             command:
               - ls
-              - /var/lib/mysql/lost+found
+              - /usr/share/nginx/html/lost+found
           initialDelaySeconds: 5
           periodSeconds: 5
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: changeme
         ports:
-        - containerPort: 3306
-          name: mysql-dep-rwo
+        - containerPort: 80
+          name: web-state-rwo
         volumeMounts:
-        - name: mysql-dep-rwo-volume
-          mountPath: /var/lib/mysql
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "rancher"
-      volumes:
-      - name: mysql-dep-rwo-volume
-        persistentVolumeClaim:
-          claimName: mysql-dep-rwo-pvc
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "longhorn"
+      resources:
+        requests:
+          storage: 0.5Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-dep-rwx
+  name: nginx-state-rwx
   labels:
-    app: mysql-dep-rwx
+    app: nginx-state-rwx
 spec:
   ports:
-    - port: 3306
+  - port: 80
+    name: web-state-rwx
   selector:
-    app: mysql-dep-rwx
-  clusterIP: None
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-dep-rwx-pvc
-spec:
-  accessModes:
-    - ReadWriteMany    
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 0.5Gi
+    app: nginx-state-rwx
+  type: NodePort
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mysql-dep-rwx
-  labels:
-    app: mysql-dep-rwx
+  name: web-state-rwx
 spec:
   selector:
     matchLabels:
-      app: mysql-dep-rwx # has to match .spec.template.metadata.labels
-  strategy:
-    type: Recreate
+      app: nginx-state-rwx # has to match .spec.template.metadata.labels
+  serviceName: "nginx-state-rwx"
+  replicas: 1 # by default is 1
   template:
     metadata:
       labels:
-        app: mysql-dep-rwx
+        app: nginx-state-rwx # has to match .spec.selector.matchLabels
     spec:
       restartPolicy: Always
+      terminationGracePeriodSeconds: 10
       containers:
-      - image: mysql:5.6
-        name: mysql-dep-rwx
+      - name: nginx-state-rwx
+        image: k8s.gcr.io/nginx-slim:0.8
         livenessProbe:
           exec:
             command:
               - ls
-              - /var/lib/mysql/lost+found
+              - /usr/share/nginx/html/lost+found
           initialDelaySeconds: 5
           periodSeconds: 5
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: changeme
         ports:
-        - containerPort: 3306
-          name: mysql-dep-rwx
+        - containerPort: 80
+          name: web-state-rwx
         volumeMounts:
-        - name: mysql-dep-rwx-volume
-          mountPath: /var/lib/mysql
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "rancher"
-      volumes:
-      - name: mysql-dep-rwx-volume
-        persistentVolumeClaim:
-          claimName: mysql-dep-rwx-pvc
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteMany" ]      
+      storageClassName: "longhorn"
+      resources:
+        requests:
+          storage: 0.5Gi
