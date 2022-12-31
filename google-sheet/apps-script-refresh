@@ -1,0 +1,11 @@
+function RefreshImports() {
+  // Get the current values
+  var values = SpreadsheetApp.getActiveSheet().getRange("C3:C15").getValues();
+  var sheetName = "交易紀錄";  // Please set the sheet name.
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  var spreadsheet = SpreadsheetApp.getActive();
+  Logger.log(values);
+  spreadsheet.getRange('C3:C15').activate();
+  spreadsheet.getActiveRangeList().clear({contentsOnly: true, skipFilteredRows: true}); 
+  sheet.getRange("C3:C15").setValues(values);
+}
