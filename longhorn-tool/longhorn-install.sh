@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#!/bin/bash
+
 if [ -z "$1" ]; then
     echo "Please provide the version argument."
     echo "Usage: ./longhorn-install.sh <version>"
@@ -21,3 +23,14 @@ kubectl get node --show-labels | grep node-role.kubernetes.io/master=true
 kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/prerequisite/longhorn-nfs-installation.yaml
 kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/prerequisite/longhorn-iscsi-installation.yaml
 kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
+
+# Check if all Longhorn components are ready
+TIMEOUT=300 # Set the timeout to 5 minutes
+echo "Waiting for Longhorn components to be ready..."
+if ! kubectl wait --for=condition=ready pod --all -n longhorn-system --timeout=${TIMEOUT}s &> /dev/null
+then
+    echo "Not all Longhorn components are ready after ${TIMEOUT} seconds."
+    exit 1
+fi
+
+echo "All Longhorn components are ready."
