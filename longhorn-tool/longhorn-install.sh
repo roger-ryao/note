@@ -1,6 +1,8 @@
 #!/bin/bash
 
-if [[ -z "$1" || -z "$2" ]]; then
+VERSION=$1
+
+if [[ $# -lt 1 ]]; then
     echo "Please provide the version and kubeconfig path arguments."
     echo "Usage: ./longhorn-install.sh <version> [<kubeconfig path>]"
     echo "Examples:"
@@ -9,11 +11,11 @@ if [[ -z "$1" || -z "$2" ]]; then
     exit 1
 fi
 
-VERSION=$1
-
-if [[ -z "$2" ]]; then
+if [[ $# -ne 2 ]]; then
+    echo "KUBECONFIG=~/.kube/config"
     KUBECONFIG=~/.kube/config # Set the default kubeconfig path
 else
+    echo "KUBECONFIG=$2"
     KUBECONFIG=$2 # Use the provided kubeconfig path
 fi
 
@@ -29,7 +31,14 @@ kubectl --kubeconfig="$KUBECONFIG" get node --show-labels | grep node-role.kuber
 
 kubectl --kubeconfig="$KUBECONFIG" apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/prerequisite/longhorn-nfs-installation.yaml
 kubectl --kubeconfig="$KUBECONFIG" apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/prerequisite/longhorn-iscsi-installation.yaml
-kubectl --kubeconfig="$KUBECONFIG" apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
+
+if [[ $VERSION == v1.3.x ]]; then
+    kubectl --kubeconfig="$KUBECONFIG" apply -f longhorn-13x.yaml
+elif [[ $VERSION == v1.4.x ]]; then
+    kubectl --kubeconfig="$KUBECONFIG" apply -f longhorn-14x.yaml
+else
+    kubectl --kubeconfig="$KUBECONFIG" apply -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
+fi
 
 # Check if all Longhorn components are ready
 TIMEOUT=300 # Set the timeout to 5 minutes

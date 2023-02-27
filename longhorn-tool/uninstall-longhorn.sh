@@ -3,8 +3,7 @@
 VERSION=$1
 
 # Check if version argument is provided
-if [ -z "$VERSION" ]
-then
+if [[ $# -lt 1 ]]; then
     echo "Please provide a Longhorn version number as an argument."
     echo "Usage: ./uninstall-longhorn.sh <version> [<kubeconfig path>]"
     echo "Examples:"
@@ -13,9 +12,11 @@ then
     exit 1    
 fi
 
-if [[ -z "$2" ]]; then
+if [[ $# -ne 2 ]]; then
+    echo "KUBECONFIG=~/.kube/config"
     KUBECONFIG=~/.kube/config # Set the default kubeconfig path
 else
+    echo "KUBECONFIG=$2"
     KUBECONFIG=$2 # Use the provided kubeconfig path
 fi
 
@@ -28,10 +29,12 @@ then
     exit 1
 fi
 
-# Remove the Longhorn deletion confirmation flag (only for v1.4+)
+# Allow for the uninstallation of Longhorn and modify deletion confirmation flag (only for v1.4+)
 if [[ $VERSION == v1.[4-6]* ]]
 then
-    kubectl --kubeconfig=$KUBECONFIG -n longhorn-system patch -p '{"value": "true"}' --type=merge lhs deleting-confirmation-flag
+    set +e # disable error exit
+    kubectl --kubeconfig=$KUBECONFIG -n longhorn-system patch -p '{"value": "true"}' --type=merge setting.longhorn.io/deleting-confirmation-flag
+    set -e # enable error exit
 fi
 
 # Uninstall Longhorn
@@ -41,15 +44,16 @@ kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/lon
 if [[ $VERSION == v1.[4-6]* ]]
 then
     kubectl --kubeconfig=$KUBECONFIG wait --for=condition=complete job/longhorn-uninstall -n longhorn-system --timeout=5m
-
 elif [[ $VERSION == v1.3* ]]
 then
     kubectl --kubeconfig=$KUBECONFIG wait --for=condition=complete job/longhorn-uninstall -n default --timeout=5m
 fi
 
 # Remove remaining components
+set +e
 kubectl --kubeconfig=$KUBECONFIG delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
 kubectl --kubeconfig=$KUBECONFIG delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/uninstall/uninstall.yaml
+set -e
 
 TIMEOUT=180 # set waiting time to 3 minutes
 
@@ -67,3 +71,5 @@ done
 
 echo "longhorn-system namespace has been successfully deleted."
 echo "Uninstall completed successfully."
+
+# for crd in $(kubectl get crd -o name | grep longhorn); do kubectl patch $crd -p '{"metadata":{"finalizers":[]}}' --type=merge; done;
