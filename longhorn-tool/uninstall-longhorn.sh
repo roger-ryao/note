@@ -30,11 +30,28 @@ then
 fi
 
 # Allow for the uninstallation of Longhorn and modify deletion confirmation flag (only for v1.4+)
+expected_output="setting.longhorn.io/deleting-confirmation-flag patched"
+retry_count=0
+max_retries=2
 if [[ $VERSION == v1.[4-6]* ]]
 then
-    set +e # disable error exit
-    kubectl --kubeconfig=$KUBECONFIG -n longhorn-system patch -p '{"value": "true"}' --type=merge setting.longhorn.io/deleting-confirmation-flag
-    set -e # enable error exit
+    while true; do
+      command_output=$(kubectl --kubeconfig=$KUBECONFIG -n longhorn-system patch -p '{"value": "true"}' --type=merge setting.longhorn.io/deleting-confirmation-flag)
+    
+      if [ "$command_output" == "$expected_output" ]; then
+        echo "Set deleting-confirmation-flag to true"
+        break
+      else
+        retry_count=$((retry_count+1))
+        if [ $retry_count -gt $max_retries ]; then
+          echo "Failed to set deleting-confirmation-flag. After $retry_count retries."
+          exit 1
+        else
+          echo "Failed to set deleting-confirmation-flag. Retrying in 30 seconds..."
+          sleep 30
+        fi
+      fi
+    done
 fi
 
 # Uninstall Longhorn

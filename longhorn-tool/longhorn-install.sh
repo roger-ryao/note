@@ -41,7 +41,8 @@ else
 fi
 
 # Check if all Longhorn components are ready
-TIMEOUT=300 # Set the timeout to 5 minutes
+sleep 30
+TIMEOUT=180 # Set the timeout to 3 minutes
 echo "Waiting for Longhorn components to be ready..."
 if ! kubectl --kubeconfig="$KUBECONFIG" wait --for=condition=ready pod --all -n longhorn-system --timeout=${TIMEOUT}s &> /dev/null
 then
