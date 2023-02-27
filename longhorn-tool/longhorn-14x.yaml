@@ -1776,7 +1776,7 @@ spec:
             description: InstanceManagerSpec defines the desired state of the Longhorn instancer manager
             properties:
               engineImage:
-                description: 'TODO: deprecate this field'
+                description: 'Deprecated: This field is useless.'
                 type: string
               image:
                 type: string
@@ -2269,7 +2269,7 @@ spec:
       jsonPath: .spec.groups
       name: Groups
       type: string
-    - description: Should be one of "backup" or "snapshot"
+    - description: Should be one of "snapshot", "snapshot-cleanup", "snapshot-delete" or "backup"
       jsonPath: .spec.task
       name: Task
       type: string
@@ -2331,9 +2331,11 @@ spec:
                 description: The retain count of the snapshot/backup.
                 type: integer
               task:
-                description: The recurring job type. Can be "snapshot" or "backup".
+                description: The recurring job task. Can be "snapshot", "snapshot-cleanup", "snapshot-delete" or "backup".
                 enum:
                 - snapshot
+                - snapshot-cleanup
+                - snapshot-delete
                 - backup
                 type: string
             type: object
@@ -3438,7 +3440,7 @@ spec:
               recurringJobs:
                 description: Deprecated. Replaced by a separate resource named "RecurringJob"
                 items:
-                  description: 'VolumeRecurringJobSpec is a deprecated struct. TODO: Should be removed when recurringJobs gets removed from the volume       spec.'
+                  description: 'Deprecated: This field is useless and has been replaced by the RecurringJob CRD'
                   properties:
                     concurrency:
                       type: integer
@@ -3459,6 +3461,8 @@ spec:
                     task:
                       enum:
                       - snapshot
+                      - snapshot-cleanup
+                      - snapshot-delete
                       - backup
                       type: string
                   type: object
@@ -3871,11 +3875,11 @@ spec:
     spec:
       initContainers:
       - name: wait-longhorn-admission-webhook
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         command: ['sh', '-c', 'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" -k https://longhorn-admission-webhook:9443/v1/healthz) != "200" ]; do echo waiting; sleep 2; done']
       containers:
       - name: longhorn-manager
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         imagePullPolicy: IfNotPresent
         securityContext:
           privileged: true
@@ -3884,17 +3888,17 @@ spec:
         - -d
         - daemon
         - --engine-image
-        - "longhornio/longhorn-engine:v1.4.X-head"
+        - "longhornio/longhorn-engine:v1.4.x-head"
         - --instance-manager-image
-        - "longhornio/longhorn-instance-manager:v1.4.X-head"
+        - "longhornio/longhorn-instance-manager:v1.4.x-head"
         - --share-manager-image
-        - "longhornio/longhorn-share-manager:v1.4.X-head"
+        - "longhornio/longhorn-share-manager:v1.4.x-head"
         - --backing-image-manager-image
-        - "longhornio/backing-image-manager:v1.4.X-head"
+        - "longhornio/backing-image-manager:v1.4.x-head"
         - --support-bundle-manager-image
         - "longhornio/support-bundle-kit:v0.0.17"
         - --manager-image
-        - "longhornio/longhorn-manager:v1.4.X-head"
+        - "longhornio/longhorn-manager:v1.4.x-head"
         - --service-account
         - longhorn-service-account
         ports:
@@ -3970,18 +3974,18 @@ spec:
     spec:
       initContainers:
         - name: wait-longhorn-manager
-          image: longhornio/longhorn-manager:v1.4.X-head
+          image: longhornio/longhorn-manager:v1.4.x-head
           command: ['sh', '-c', 'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" http://longhorn-backend:9500/v1) != "200" ]; do echo waiting; sleep 2; done']
       containers:
         - name: longhorn-driver-deployer
-          image: longhornio/longhorn-manager:v1.4.X-head
+          image: longhornio/longhorn-manager:v1.4.x-head
           imagePullPolicy: IfNotPresent
           command:
           - longhorn-manager
           - -d
           - deploy-driver
           - --manager-image
-          - "longhornio/longhorn-manager:v1.4.X-head"
+          - "longhornio/longhorn-manager:v1.4.x-head"
           - --manager-url
           - http://longhorn-backend:9500/v1
           env:
@@ -4051,7 +4055,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: longhorn-recovery-backend
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 2000
@@ -4117,7 +4121,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: longhorn-ui
-        image: longhornio/longhorn-ui:v1.4.X-head
+        image: longhornio/longhorn-ui:v1.4.x-head
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name : nginx-cache
@@ -4180,7 +4184,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: longhorn-conversion-webhook
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 2000
@@ -4240,14 +4244,14 @@ spec:
               topologyKey: kubernetes.io/hostname
       initContainers:
       - name: wait-longhorn-conversion-webhook
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         command: ['sh', '-c', 'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" -k https://longhorn-conversion-webhook:9443/v1/healthz) != "200" ]; do echo waiting; sleep 2; done']
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 2000
       containers:
       - name: longhorn-admission-webhook
-        image: longhornio/longhorn-manager:v1.4.X-head
+        image: longhornio/longhorn-manager:v1.4.x-head
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsUser: 2000
@@ -4272,3 +4276,6 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
       serviceAccountName: longhorn-service-account
+---
+# Source: longhorn/templates/validate-psp-install.yaml
+#
