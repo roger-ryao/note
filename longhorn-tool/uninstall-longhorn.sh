@@ -6,7 +6,17 @@ VERSION=$1
 if [ -z "$VERSION" ]
 then
     echo "Please provide a Longhorn version number as an argument."
-    exit 1
+    echo "Usage: ./uninstall-longhorn.sh <version> [<kubeconfig path>]"
+    echo "Examples:"
+    echo "  ./uninstall-longhorn.sh v1.4.0"
+    echo "  ./uninstall-longhorn.sh v1.4.0 kubeconfig.yaml"
+    exit 1    
+fi
+
+if [[ -z "$2" ]]; then
+    KUBECONFIG=~/.kube/config # Set the default kubeconfig path
+else
+    KUBECONFIG=$2 # Use the provided kubeconfig path
 fi
 
 # Confirm that the user wants to proceed with the uninstall
@@ -21,32 +31,32 @@ fi
 # Remove the Longhorn deletion confirmation flag (only for v1.4+)
 if [[ $VERSION == v1.[4-6]* ]]
 then
-    kubectl -n longhorn-system patch -p '{"value": "true"}' --type=merge lhs deleting-confirmation-flag
+    kubectl --kubeconfig=$KUBECONFIG -n longhorn-system patch -p '{"value": "true"}' --type=merge lhs deleting-confirmation-flag
 fi
 
 # Uninstall Longhorn
-kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/uninstall/uninstall.yaml
+kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/uninstall/uninstall.yaml
 
 # Wait for the Longhorn uninstall job to complete (different namespaces for different versions)
 if [[ $VERSION == v1.[4-6]* ]]
 then
-    kubectl wait --for=condition=complete job/longhorn-uninstall -n longhorn-system --timeout=5m
+    kubectl --kubeconfig=$KUBECONFIG wait --for=condition=complete job/longhorn-uninstall -n longhorn-system --timeout=5m
 
 elif [[ $VERSION == v1.3* ]]
 then
-    kubectl wait --for=condition=complete job/longhorn-uninstall -n default --timeout=5m
+    kubectl --kubeconfig=$KUBECONFIG wait --for=condition=complete job/longhorn-uninstall -n default --timeout=5m
 fi
 
 # Remove remaining components
-kubectl delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
-kubectl delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/uninstall/uninstall.yaml
+kubectl --kubeconfig=$KUBECONFIG delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/deploy/longhorn.yaml
+kubectl --kubeconfig=$KUBECONFIG delete -f https://raw.githubusercontent.com/longhorn/longhorn/${VERSION}/uninstall/uninstall.yaml
 
 TIMEOUT=180 # set waiting time to 3 minutes
 
 echo "Waiting for longhorn-system namespace to be deleted..."
 
 # Continuously check if the longhorn-system namespace exists, if it does, continue waiting until timeout
-while kubectl get ns longhorn-system &> /dev/null; do
+while kubectl --kubeconfig=$KUBECONFIG get ns longhorn-system &> /dev/null; do
     sleep 5
     TIMEOUT=$((TIMEOUT-5))
     if [[ $TIMEOUT -lt 0 ]]; then
